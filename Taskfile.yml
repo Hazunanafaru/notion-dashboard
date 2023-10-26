@@ -1,0 +1,26 @@
+version: '3'
+
+dotenv: ['.compose.env']
+env:
+  NOTION_DASHBOARD_VERSION:
+    sh: cargo metadata --no-deps --format-version=1 | jq -r '.packages[0].version'
+
+tasks:
+  run:
+    cmds:
+      - cargo run
+  migrate:
+    cmds:
+      - sqlx migrate run --source migrations --database-url $DATABASE_URL
+  image-build:
+    cmds:
+      - docker build -t notion-dashboard:{{.NOTION_DASHBOARD_VERSION}} -f build/Dockerfile .
+  image-remove:
+    cmds:
+      - docker image rm notion-dashboard:{{.NOTION_DASHBOARD_VERSION}}
+  compose-up:
+    cmds:
+      - cd build && docker compose up -d
+  compose-down:
+    cmds:
+      - cd build && docker compose down
