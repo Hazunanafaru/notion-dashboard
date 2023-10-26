@@ -15,6 +15,12 @@ tasks:
   image-build:
     cmds:
       - docker build -t notion-dashboard:{{.NOTION_DASHBOARD_VERSION}} -f build/Dockerfile .
+  image-tag:
+    cmds:
+      - docker tag notion-dashboard:{{.NOTION_DASHBOARD_VERSION}} gcr.io/$GCP_PROJECT/notion-dashboard:{{.NOTION_DASHBOARD_VERSION}} 
+  image-push:
+    cmds:
+      - docker push gcr.io/$GCP_PROJECT/notion-dashboard:{{.NOTION_DASHBOARD_VERSION}}
   image-remove:
     cmds:
       - docker image rm notion-dashboard:{{.NOTION_DASHBOARD_VERSION}}
