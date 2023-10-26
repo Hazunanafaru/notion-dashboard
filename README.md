@@ -2,15 +2,12 @@
 
 Simple job to update my internal notion dashboard.
 
-## Requirement
-### Job
-1. rust
-2. docker
-3. sqlx
-4. terraform (tfenv)
-5. terragrunt (tgenv)
-6. gcloud
-7. Taskfile
+## Stack
+* [Rust Programming Language](https://www.rust-lang.org/)
+* [docker (compose)](https://www.docker.com/)
+* [sqlx](https://github.com/launchbadge/sqlx)
+* [gcloud](https://cloud.google.com/sdk/docs/install)
+* [Taskile](https://taskfile.dev/installation/)
 
 ## Development
 
@@ -25,6 +22,7 @@ Simple job to update my internal notion dashboard.
    NOTION_TOKEN="<your_notion_token>"
    NOTION_DJ_DATABASE_ID="<your_notion_dj_database_id>"
    NOTION_DJ_DASHBOARD_H1_ID="<your_notion_dj_dashboard_h1_id>"
+   GCP_PROJECT="<your_gcp_project_id>"
    DATABASE_URL="postgresql://<your_db_name>:<your_db_password>@localhost:5432/notion_dashboard"
    EOT
    export $(xargs < .compose.env)
