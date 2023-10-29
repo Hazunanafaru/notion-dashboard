@@ -6,8 +6,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Set date
     let date = Local::now().date_naive().to_string();
     println!("Start Daily Journal Dashboard for {}", date);
+
     // Load config
     let envars = Envars::default();
+
     // Setup DB Connection
     let conn_url = format!(
         "postgress://{}:{}@{}:{}/{}",
@@ -21,6 +23,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .max_connections(5)
         .connect(&conn_url)
         .await?;
+
+    // Initiate Migration
+    run_migration(&pool).await;
 
     // Get page_data of today Daily Journal
     let page_data = match get_page_data(

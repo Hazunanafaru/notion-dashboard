@@ -1,5 +1,16 @@
 use crate::model::*;
+use sqlx::migrate::Migrator;
 use sqlx::{types::chrono::NaiveDate, Pool, Postgres};
+
+static MIGRATOR: Migrator = sqlx::migrate!();
+
+/// Run Migrator to verify database migration
+pub async fn run_migration(pool: &Pool<Postgres>) {
+    match MIGRATOR.run(pool).await {
+        Ok(_) => println!("Migration succeed!"),
+        Err(err) => println!("Migration Error: {}", err),
+    };
+}
 
 /// Insert Page ID from notion to pages table in PostgreSQL
 pub async fn insert_page_id(pool: &Pool<Postgres>, page_id: &str, date: &str) {
