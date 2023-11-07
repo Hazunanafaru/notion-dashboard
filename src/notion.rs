@@ -6,7 +6,7 @@ const NOTION_API_ENDPOINT: &str = "https://api.notion.com/v1";
 const NOTION_VERSION: &str = "2022-06-28";
 
 /// Get Page Data from Notion
-pub async fn get_page_data(token: &str, ndb_id: &str, date: &str) -> Result<PageData, String> {
+pub async fn get_page_data(token: &str, ndb_id: &str, date: &str) -> Result<DailyJournal, String> {
     let client = Client::new();
     let endpoint = format!("{}/databases/{}/query", NOTION_API_ENDPOINT, ndb_id);
     let formated_date = format!("{}T00:00:00+07:00", date);
@@ -21,7 +21,7 @@ pub async fn get_page_data(token: &str, ndb_id: &str, date: &str) -> Result<Page
         .send()
         .await
         .expect("Failed to get response")
-        .json::<PageDatas>()
+        .json::<DailyJournals>()
         .await
         .expect("Failed to get payload");
     match resp.results.first() {
@@ -61,7 +61,7 @@ pub async fn patch_daily_dashboard(token: &str, block_id: &str, total_dj_pages: 
         .send()
         .await
         .expect("Failed to patch object")
-        .json::<PageData>()
+        .json::<DailyJournal>()
         .await
         .expect("Failed to get payload");
     println!("Object ID Daily Journal Dashboard {}", &resp.id);

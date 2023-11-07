@@ -8,10 +8,10 @@ env:
 tasks:
   run:
     cmds:
-      - cargo run
+      - RUST_LOG=trace cargo run
   migrate:
     cmds:
-      - sqlx migrate run --source migrations --database-url $DATABASE_URL
+      - sqlx migrate run --source migrations --database-url "postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@$POSTGRES_URL:5432/$POSTGRES_DB"
   image-build:
     cmds:
       - docker build -t notion-dashboard:{{.NOTION_DASHBOARD_VERSION}} -f build/Dockerfile .
