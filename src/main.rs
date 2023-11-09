@@ -1,24 +1,28 @@
-use chrono::offset::Local;
+use chrono::{offset::Local, DateTime, Duration};
 use env_logger;
-use log::debug;
-use notion_dashboard::{config::Envars, db::*};
+use log::{debug, error, info};
+use notion_dashboard::{config::config::Envars, notion::api::*, psql::db::*};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Setup logging
-    // let mut builder = Builder::from_default_env();
-    // builder.target(Target::Stderr);
-    //
-    // builder.init();
     env_logger::init();
 
-    // Set date
-    let date = Local::now().date_naive().to_string();
-    debug!("Start Daily Journal Dashboard Cronjob at {}.", date);
+    // Setup naive date to check the yesterday Daily Journal
+    let today = Local::now();
+    let yesteday = today.clone() - Duration::days(1);
+    let today_string = today.date_naive().to_string();
+    let yesterday_string = yesteday.date_naive().to_string();
+    let splitted_date: Vec<&str> = today_string.split('-').collect();
+    let first_day_string = format!("{}-{}-01", splitted_date[0], splitted_date[1]);
+    info!(
+        "Start Daily Journal Dashboard Cronjob for {}.",
+        today.date_naive().to_string()
+    );
 
     // Load config
     let envars = Envars::default();
-    debug!("Loading environment variables.");
+    info!("Loading environment variables.");
 
     // Setup DB Connection
     let conn_url = format!(
@@ -33,38 +37,59 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .max_connections(5)
         .connect(&conn_url)
         .await?;
-    debug!("Setup PostgreSQL connection");
+    info!("Setup PostgreSQL connection.");
 
     // Check database schema. If there is no matched schema, run migration
-    check_database_schema(&pool).await;
+    let _schema_check = match check_database_schema(&pool).await {
+        Ok(_) => {}
+        Err(_) => run_migration(&pool).await,
+    };
 
-    // // Get page_data of today Daily Journal
-    // let page_data = match get_page_data(
-    //     envars.notion_token.as_str(),
-    //     envars.notion_dj_database_id.as_str(),
-    //     &date,
-    // )
-    // .await
-    // {
-    //     Ok(page_data) => page_data,
-    //     Err(_) => {
-    //         println!("Graceful shutdown due to no Daily Journal page today.");
-    //         std::process::exit(0)
-    //     }
-    // };
-    //
-    // // Insert Today page_id to notion_dashboard postgress database
-    // insert_page_id(&pool, &page_data.id, &date).await;
-    //
-    // // Aggregate Total page_id of this month
-    // let aggregate_record = update_monthly_data(&pool, &date).await?;
-    //
-    // // Patch Daily Journal Dashboard Total Pages of this month page
-    // patch_daily_dashboard(
-    //     envars.notion_token.as_str(),
-    //     envars.notion_dj_dashboard_h1_id.as_str(),
-    //     aggregate_record.total_dj_pages,
-    // )
-    // .await;
+    // Check this month Daily Journal count in postgres
+    let mut psql_monthly_daily_journal_count = 0_i64;
+    match get_monthly_daily_journal_count(&pool, &today_string, &first_day_string).await {
+        Ok(count) => psql_monthly_daily_journal_count = count,
+        Err(err) => {
+            error!("{}", err)
+        }
+    }
+
+    let daily_journals = match psql_monthly_daily_journal_count {
+        0 => {
+            // Get this month daily journals
+            get_daily_journals(
+                envars.notion_token.as_str(),
+                envars.notion_dj_database_id.as_str(),
+                &first_day_string,
+                &today_string,
+            )
+            .await
+            .expect("Failed to get this month daily journals")
+        }
+        _ => {
+            // Get today daily journal
+            get_daily_journals(
+                envars.notion_token.as_str(),
+                envars.notion_dj_database_id.as_str(),
+                &yesterday_string,
+                &today_string,
+            )
+            .await
+            .expect("Failed to get today daily journal")
+        }
+    };
+    let daily_journals_count =
+        daily_journals.results.len() as i32 + psql_monthly_daily_journal_count as i32;
+
+    // Insert Daily Journals to postgreSQL database
+    insert_daily_journal(&pool, daily_journals).await;
+
+    // Update Daily Journal Written this Month Notion Dashboard
+    let _ = patch_daily_dashboard(
+        envars.notion_token.as_str(),
+        envars.notion_dj_dashboard_h1_id.as_str(),
+        daily_journals_count,
+    )
+    .await;
     Ok(())
 }
