@@ -9,6 +9,33 @@ Simple job to update my internal notion dashboard.
 * [gcloud](https://cloud.google.com/sdk/docs/install)
 * [Taskile](https://taskfile.dev/installation/)
 
+## How it works
+
+Basically this cron job just pull data from notion database, store it in PostgreSQL, and update a notion block item.
+This notion block item serve as a non-realtime dashboard in the Daily Journal notion page.
+
+## Sequence Diagram
+
+```mermaid
+sequenceDiagram
+   participant C as Cron Job Service
+   participant N as Notion API
+   participant P as PostgresQL
+
+   C->>P: Check Database Schema
+   alt postgresql schema is not same
+   C->>P: Migrate
+   end
+   C->>P: Check this month Daily Journal
+   alt this month data empty
+   C->>N: Get this month Daily Journals
+   else this month data not empty
+   C->>N: Get today Daily Journal
+   end
+   C->>P: Insert new Daily Journals
+   C->>N: Update Daily Journal Dashboard
+```
+
 ## Development
 
 1. Create `.compose.env` file and export it as environment variables
