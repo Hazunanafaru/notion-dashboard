@@ -38,7 +38,7 @@ impl DailyJournal {
 
 // Column derived from sqlx FromRow
 // To serialize column data when do Schema Checking
-#[derive(sqlx::FromRow)]
+#[derive(sqlx::FromRow, Debug)]
 pub struct Column {
     pub column_name: String,
 }

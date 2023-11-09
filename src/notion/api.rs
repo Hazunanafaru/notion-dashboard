@@ -1,5 +1,5 @@
 use crate::notion::model::{BlockHeading1, DailyJournals};
-use log::{debug, error, info, warn};
+use log::{error, info};
 use reqwest::Client;
 use serde_json::json;
 

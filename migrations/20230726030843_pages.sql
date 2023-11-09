@@ -1,5 +1,5 @@
 -- Add migration script here
-CREATE TABLE IF NOT EXISTS pages
+CREATE TABLE IF NOT EXISTS daily_journal_pages
 (
     id BIGSERIAL PRIMARY KEY,
     date DATE NOT NULL,
