@@ -4,14 +4,16 @@ dotenv: ['.compose.env']
 env:
   NOTION_DASHBOARD_VERSION:
     sh: cargo metadata --no-deps --format-version=1 | jq -r '.packages[0].version'
+  RUST_LOG:
+    sh: echo debug
 
 tasks:
   run:
     cmds:
-      - cargo run
+      - RUST_LOG={{.RUST_LOG}} cargo run
   migrate:
     cmds:
-      - sqlx migrate run --source migrations --database-url $DATABASE_URL
+      - sqlx migrate run --source migrations --database-url "postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@$POSTGRES_URL:5432/$POSTGRES_DB"
   image-build:
     cmds:
       - docker build -t notion-dashboard:{{.NOTION_DASHBOARD_VERSION}} -f build/Dockerfile .

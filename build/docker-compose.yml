@@ -2,10 +2,10 @@ name: notion-dashboard
 version: "3"
 
 services:
-  notion-dashboard:
-    image: "notion-dashboard:${NOTION_DASHBOARD_VERSION}"
-    env_file:
-      - "../.compose.env"
+  # notion-dashboard:
+  #   image: "notion-dashboard:${NOTION_DASHBOARD_VERSION}"
+  #   env_file:
+  #     - "../.compose.env"
   db:
     image: postgres:12-alpine
     restart: always
