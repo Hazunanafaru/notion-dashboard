@@ -1,6 +1,6 @@
-use chrono::{offset::Local, DateTime, Duration};
+use chrono::{offset::Local, Duration};
 use env_logger;
-use log::{debug, error, info};
+use log::{error, info, warn};
 use notion_dashboard::{config::config::Envars, notion::api::*, psql::db::*};
 
 #[tokio::main]
@@ -42,7 +42,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Check database schema. If there is no matched schema, run migration
     let _schema_check = match check_database_schema(&pool).await {
         Ok(_) => {}
-        Err(_) => run_migration(&pool).await,
+        Err(err) => {
+            warn!("{}", err);
+            run_migration(&pool).await
+        }
     };
 
     // Check this month Daily Journal count in postgres

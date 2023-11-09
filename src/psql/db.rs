@@ -1,6 +1,6 @@
 use crate::notion::model::DailyJournals;
-use crate::psql::model::{Column, DailyJournal, MonthlyData};
-use log::{debug, error, info};
+use crate::psql::model::{Column, DailyJournal};
+use log::{error, info};
 use sqlx::migrate::Migrator;
 use sqlx::{types::chrono::NaiveDate, Pool, Postgres};
 
@@ -8,29 +8,22 @@ static MIGRATOR: Migrator = sqlx::migrate!();
 
 // Check database schema.
 pub async fn check_database_schema(pool: &Pool<Postgres>) -> Result<(), String> {
-    match sqlx::query_as::<_, Column>(
-        "SELECT column_name FROM information_schema.columns WHERE table_name in ('pages')",
+    let records = sqlx::query_as::<_, Column>(
+        "SELECT column_name FROM information_schema.columns WHERE table_name in ('daily_journal_pages')",
     )
     .fetch_all(pool)
     .await
-    {
-        Ok(records) => {
-            records
-                .iter()
-                .for_each(|column| DailyJournal::schema_check(column));
-            // .map(|column| DailyJournal::schema_check(column));
-            info!("Database Schema is compatible.");
-            Ok(())
-        }
-        Err(err) => {
-            let msg = format!(
-                "{}. Error while checking database schema. Will run Migrator.",
-                err
-            );
-            info!("{}", msg);
-            Err(msg)
-        }
+    .expect("Error while checking database schema. Will run migrator.");
+
+    if records.is_empty() {
+        return Err("Database schema is empty. Will run migrator.".to_string());
     }
+
+    records
+        .iter()
+        .for_each(|column| DailyJournal::schema_check(column));
+    info!("Database Schema is compatible");
+    Ok(())
 }
 
 /// Run Migrator to start database migration
@@ -44,7 +37,7 @@ pub async fn run_migration(pool: &Pool<Postgres>) {
     };
 }
 
-/// Get this month Daily Journal count from pages table in PostgreSQL
+/// Get this month Daily Journal count from daily_journal_pages table in PostgreSQL
 pub async fn get_monthly_daily_journal_count(
     pool: &Pool<Postgres>,
     today: &str,
@@ -55,7 +48,7 @@ pub async fn get_monthly_daily_journal_count(
     let today_fmt_date =
         NaiveDate::parse_from_str(&today, "%Y-%m-%d").expect("Failed to parse today_date (date).");
     let get_count: (i64,) =
-        sqlx::query_as("SELECT COUNT(id) FROM pages WHERE date >= $1 AND date <= $2")
+        sqlx::query_as("SELECT COUNT(id) FROM daily_journal_pages WHERE date >= $1 AND date <= $2")
             .bind(first_day_fmt_date)
             .bind(today_fmt_date)
             .fetch_one(pool)
@@ -64,7 +57,7 @@ pub async fn get_monthly_daily_journal_count(
     Ok(get_count.0)
 }
 
-/// Insert Page ID from notion to pages table in PostgreSQL
+/// Insert Page ID from notion to daily_journal_pages table in PostgreSQL
 pub async fn insert_daily_journal(pool: &Pool<Postgres>, daily_journals: DailyJournals) {
     for dj in daily_journals.results {
         // Setup variables
@@ -95,7 +88,7 @@ pub async fn insert_daily_journal(pool: &Pool<Postgres>, daily_journals: DailyJo
 
         // Insert Daily Journal
         let record: Result<(i64,), sqlx::Error> =
-            sqlx::query_as("INSERT INTO pages (date, page_id, name, verdict, kcal, tags) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id")
+            sqlx::query_as("INSERT INTO daily_journal_pages (date, page_id, name, verdict, kcal, tags) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id")
                 .bind(formated_date)
                 .bind(page_id)
                 .bind(name)
