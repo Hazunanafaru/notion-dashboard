@@ -8,6 +8,9 @@ env:
     sh: echo debug
 
 tasks:
+  test:
+    cmds:
+     - cargo test
   run:
     cmds:
       - RUST_LOG={{.RUST_LOG}} cargo run
