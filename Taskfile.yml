@@ -6,8 +6,16 @@ env:
     sh: cargo metadata --no-deps --format-version=1 | jq -r '.packages[0].version'
   RUST_LOG:
     sh: echo debug
+  GIT_CURRENT_BRANCH:
+    sh: git rev-parse --abbrev-ref HEAD
 
 tasks:
+  gen-cl:
+    cmds:
+     - git log {{.GIT_CURRENT_BRANCH}} --not $(git for-each-ref --format='%(refname)' refs/heads/ | grep -v "refs/heads/{{.GIT_CURRENT_BRANCH}}") --pretty="- %s" >> CHANGELOG.md
+  test:
+    cmds:
+     - cargo test
   run:
     cmds:
       - RUST_LOG={{.RUST_LOG}} cargo run

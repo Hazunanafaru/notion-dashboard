@@ -1,7 +1,7 @@
 use chrono::{offset::Local, Duration};
 use env_logger;
 use log::{error, info, warn};
-use notion_dashboard::{config::config::Envars, notion::api::*, psql::db::*};
+use notion_dashboard::{config::config::Config, notion::api::*, psql::db::*};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -21,17 +21,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     // Load config
-    let envars = Envars::default();
+    let configs = Config::from_envar();
     info!("Loading environment variables.");
 
     // Setup DB Connection
     let conn_url = format!(
         "postgress://{}:{}@{}:{}/{}",
-        envars.postgres_user,
-        envars.postgres_password,
-        envars.postgres_url,
-        envars.postgres_port,
-        envars.postgres_db
+        configs.postgres_user,
+        configs.postgres_password,
+        configs.postgres_url,
+        configs.postgres_port,
+        configs.postgres_db
     );
     let pool = sqlx::postgres::PgPoolOptions::new()
         .max_connections(5)
@@ -61,8 +61,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         0 => {
             // Get this month daily journals
             get_daily_journals(
-                envars.notion_token.as_str(),
-                envars.notion_dj_database_id.as_str(),
+                configs.notion_token.as_str(),
+                configs.notion_dj_database_id.as_str(),
                 &first_day_string,
                 &today_string,
             )
@@ -72,8 +72,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         _ => {
             // Get today daily journal
             get_daily_journals(
-                envars.notion_token.as_str(),
-                envars.notion_dj_database_id.as_str(),
+                configs.notion_token.as_str(),
+                configs.notion_dj_database_id.as_str(),
                 &yesterday_string,
                 &today_string,
             )
@@ -89,8 +89,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Update Daily Journal Written this Month Notion Dashboard
     let _ = patch_daily_dashboard(
-        envars.notion_token.as_str(),
-        envars.notion_dj_dashboard_h1_id.as_str(),
+        configs.notion_token.as_str(),
+        configs.notion_dj_dashboard_h1_id.as_str(),
         daily_journals_count,
     )
     .await;
