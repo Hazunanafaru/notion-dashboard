@@ -1,7 +1,7 @@
 use std::env;
 
-/// Struct Envars for setup environment variables
-pub struct Envars {
+/// Struct Config for setup environment variables
+pub struct Config {
     pub postgres_url: String,
     pub postgres_port: String,
     pub postgres_user: String,
@@ -12,8 +12,32 @@ pub struct Envars {
     pub notion_dj_dashboard_h1_id: String,
 }
 
-impl Default for Envars {
+impl Default for Config {
     fn default() -> Self {
+        let postgres_url: String = "".to_string();
+        let postgres_port: String = "".to_string();
+        let postgres_user: String = "".to_string();
+        let postgres_password: String = "".to_string();
+        let postgres_db: String = "".to_string();
+        let notion_token: String = "".to_string();
+        let notion_dj_database_id: String = "".to_string();
+        let notion_dj_dashboard_h1_id: String = "".to_string();
+
+        Self {
+            postgres_url,
+            postgres_port,
+            postgres_user,
+            postgres_password,
+            postgres_db,
+            notion_token,
+            notion_dj_database_id,
+            notion_dj_dashboard_h1_id,
+        }
+    }
+}
+
+impl Config {
+    pub fn from_envar() -> Self {
         let postgres_url: String =
             env::var("POSTGRES_URL").expect("Failed to load POSTGRES_URL environment variable.");
         let postgres_port: String =
